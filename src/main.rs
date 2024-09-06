@@ -16,55 +16,115 @@ fn next_id() -> usize {
     COUNTER.fetch_add(1, Ordering::Relaxed)
 }
 
+trait Logic {
+    fn eval(&self) -> bool;
+}
+
 struct Predicate {
     name: String,
-    id: usize
+    val: bool,
+    id: usize,
 }
 
 impl Predicate {
-    fn new(name: String) -> Self {
+    fn new(name: String, value: bool) -> Self {
         Self {
             name,
+            val: value,
             id: next_id(),
         }
     }
 }
 
+impl Logic for Predicate {
+    fn eval(&self) -> bool {
+        self.val
+    }
+}
+
 struct Not {
-    val: Statement,
+    val: dyn Logic,
+}
+
+impl Logic for Not {
+    fn eval(&self) -> bool {
+        -self.val.eval()
+    }
 }
 
 struct And {
-    left: Statement,
-    right: Statement,
+    left: dyn Logic,
+    right: dyn Logic,
+}
+
+impl Logic for And {
+    fn eval(&self) -> bool {
+        self.left.eval() && self.right.eval()
+    }
 }
 
 struct Or {
-    left: Statement,
-    right: Statement,
+    left: dyn Logic,
+    right: dyn Logic,
+}
+
+impl Logic for Or {
+    fn eval(&self) -> bool {
+        self.left.eval() || self.right.eval()
+    }
 }
 
 struct Xor {
-    left: Statement,
-    right: Statement,
+    left: dyn Logic,
+    right: dyn Logic,
+}
+
+impl Logic for Xor {
+    fn eval(&self) -> bool {
+        self.left.eval() ^ self.right.eval()
+    }
 }
 
 struct Implication {
-    condition: Statement,
-    claim: Statement,
+    condition: dyn Logic,
+    claim: dyn Logic,
+}
+
+impl Logic for Implication {
+    fn eval(&self) -> bool {
+        self.condition.eval() || !self.claim.eval()
+    }
 }
 
 struct IfAndOnlyIf {
-    left: Statement,
-    right: Statement,
+    left: dyn Logic,
+    right: dyn Logic,
+}
+
+impl Logic for IfAndOnlyIf {
+    fn eval(&self) -> bool {
+        self.left.eval() == self.right.eval()
+    }
 }
 
 struct Deduction {
-    conditions: Vec<Statement>,
-    claim: Statement,
+    conditions: Vec<dyn Logic>,
+    claim: dyn Logic,
 }
 
-enum Statement {
+impl Logic for Deduction {
+    fn eval(&self) -> bool {
+        for c in self.conditions {
+            if c.eval() && !self.claim.eval() {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+/*
+enum {
     PRED(Predicate),
     NOT(Not),
     AND(And),
@@ -74,17 +134,18 @@ enum Statement {
     IFOIF(IfAndOnlyIf),
     DEDUC(Deduction),
 }
+*/
 
 
 struct Engine {
-    grid: HashMap<Statement, Vec<bool>>,
+    grid: HashMap<dyn Logic, Vec<bool>>,
 }
 
 impl Engine {
-    fn new(statements: Vec<Statement>) -> Self {
-        let map: HashMap<Statement, Vec<bool>> = HashMap::new();
+    fn new(statements: Vec<dyn Logic>) -> Self {
+        let map: HashMap<dyn Logic, Vec<bool>> = HashMap::new();
         for s in statements {
-            s
+            todo!()
         }
     }
 }
